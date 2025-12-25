@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Request Form</title>
+</head>
+<body>
+
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.2); max-width: 500px; margin: 20px auto; font-family: 'Segoe UI', sans-serif;">
+
+  <h3 style="color: white; font-size: 1.8rem; margin-bottom: 10px;">🎬 Movie Request</h3>
+  <p style="color: rgba(255,255,255,0.9); margin-bottom: 30px;">Apni movie request yahan submit karo</p>
+
+  <form id="requestForm">
+    <div style="margin-bottom: 20px;">
+      <input id="movieTitle" placeholder="🎞️ Movie Title (Required)" required 
+             style="width: 100%; padding: 15px 20px; border: 2px solid rgba(255,255,255,0.3); border-radius: 12px; background: rgba(255,255,255,0.95); font-size: 16px; box-sizing: border-box; transition: all 0.3s ease;">
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+      <input id="releaseYear" placeholder="🗓️ Release Year (Optional)" type="number" min="1878" max="2026"
+             style="width: 100%; padding: 15px 20px; border: 2px solid rgba(255,255,255,0.3); border-radius: 12px; background: rgba(255,255,255,0.95); font-size: 16px; box-sizing: border-box; transition: all 0.3s ease;">
+    </div>
+    
+    <div style="margin-bottom: 25px;">
+      <textarea id="movieNote" placeholder="📝 Notes (Optional)" rows="4"
+                style="width: 100%; padding: 15px 20px; border: 2px solid rgba(255,255,255,0.3); border-radius: 12px; background: rgba(255,255,255,0.95); font-size: 16px; box-sizing: border-box; resize: vertical; transition: all 0.3s ease;"></textarea>
+    </div>
+    
+    <button id="submitBtn" type="submit" style="width: 100%; padding: 18px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(102,126,234,0.4);">
+      📩 Submit Request
+    </button>
+    
+    <!-- Messages -->
+    <div id="statusMsg" style="display: none; margin-top: 15px; padding: 12px; border-radius: 10px; font-weight: 500;"></div>
+    <div id="errorMsg" style="display: none; margin-top: 15px; padding: 12px; border-radius: 10px; font-weight: 500;"></div>
+    <div id="cooldownMsg" style="display: none; margin-top: 15px; padding: 12px; background: rgba(251,191,36,0.2); border-radius: 10px; color: #d97706; border: 1px solid rgba(251,191,36,0.4);">
+      ⏳ Please wait <span id="cooldownTimer">10:00</span>
+    </div>
+  </form>
+
+  <!-- Success Modal -->
+  <div id="successModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background: white; border-radius: 20px; padding: 40px; max-width: 450px; width: 90%; text-align: center; transform: scale(0.8); transition: transform 0.3s ease;">
+      <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: #4ade80; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">✅</div>
+      <h3 style="color: #1f2937; margin-bottom: 15px;">Request Submitted!</h3>
+      <p style="color: #6b7280; margin-bottom: 30px; font-size: 16px;">आपकी रीक्वेस्टेड मूवी जल्दी चैनल पर आएगी 👇</p>
+      <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <a href="https://t.me/+-dkKSAGoUf4wZGFl" target="_blank" style="flex: 1; padding: 15px; background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; text-align: center;">🚀 Join Channel</a>
+        <button id="closeModal" style="flex: 1; padding: 15px; background: #f8fafc; color: #475569; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600; cursor: pointer;">✓ Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('requestForm');
+  const movieTitle = document.getElementById('movieTitle');
+  const releaseYear = document.getElementById('releaseYear');
+  const movieNote = document.getElementById('movieNote');
+  const submitBtn = document.getElementById('submitBtn');
+  const statusMsg = document.getElementById('statusMsg');
+  const errorMsg = document.getElementById('errorMsg');
+  const cooldownMsg = document.getElementById('cooldownMsg');
+  const cooldownTimer = document.getElementById('cooldownTimer');
+  const modal = document.getElementById('successModal');
+  const closeModal = document.getElementById('closeModal');
+
+  const CONFIG = {
+    token: '7989206006:AAE71ODtVxtELybfz-OePioH9Q8pSDJ4wA4',
+    chatId: '6222491731',
+    channelLink: 'https://t.me/+-dkKSAGoUf4wZGFl',
+    cooldownMs: 10 * 60 * 1000 // 10 minutes
+  };
+
+  // Cooldown functions
+  function isCooldownActive() {
+    const lastTime = localStorage.getItem('movieRequestTime');
+    if (!lastTime) return false;
+    return Date.now() - parseInt(lastTime) < CONFIG.cooldownMs;
+  }
+
+  function getRemainingTime() {
+    const lastTime = parseInt(localStorage.getItem('movieRequestTime') || 0);
+    return Math.max(0, CONFIG.cooldownMs - (Date.now() - lastTime));
+  }
+
+  function startCooldown() {
+    localStorage.setItem('movieRequestTime', Date.now().toString());
+  }
+
+  function updateCooldownUI() {
+    if (isCooldownActive()) {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.7';
+      cooldownMsg.style.display = 'block';
+      updateTimer();
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+      cooldownMsg.style.display = 'none';
+    }
+  }
+
+  function updateTimer() {
+    const timeLeft = getRemainingTime();
+    if (timeLeft <= 0) {
+      updateCooldownUI();
+      return;
+    }
+    const minutes = Math.floor(timeLeft / 60000);
+    const seconds = Math.floor((timeLeft % 60000) / 1000);
+    cooldownTimer.textContent = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+    setTimeout(updateTimer, 1000);
+  }
+
+  // Form submit
+  form.onsubmit = async function(e) {
+    e.preventDefault();
+    
+    if (isCooldownActive()) {
+      updateCooldownUI();
+      return;
+    }
+
+    const title = movieTitle.value.trim();
+    if (!title || title.length < 2) {
+      showError('❌ Movie title कम से कम 2 characters का होना चाहिए!');
+      movieTitle.focus();
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const message = `🎬 *New Movie Request*
+
+👤 *User:* ${navigator.userAgent.includes('Mobile') ? '📱 Mobile' : '💻 Desktop'}
+📌 *Title:* ${title}
+${releaseYear.value ? `🗓️ *Year:* ${releaseYear.value}` : ''}
+${movieNote.value.trim() ? `
+📝 *Notes:* ${movieNote.value.trim()}` : ''}
+⏰ *Time:* ${new Date().toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'})}`;
+
+      const url = `https://api.telegram.org/bot${CONFIG.token}/sendMessage?chat_id=${CONFIG.chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.ok) {
+        form.reset();
+        startCooldown();
+        showSuccessModal();
+      } else {
+        throw new Error('Telegram error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showError('❌ Request भेजने में error! Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  function setLoading(loading) {
+    if (loading) {
+      submitBtn.innerHTML = '⏳ Sending...';
+      submitBtn.disabled = true;
+    } else {
+      submitBtn.innerHTML = '📩 Submit Request';
+      submitBtn.disabled = false;
+    }
+  }
+
+  function showError(msg) {
+    errorMsg.innerHTML = msg;
+    errorMsg.style.display = 'block';
+    errorMsg.style.background = 'rgba(248,113,113,0.2)';
+    errorMsg.style.color = '#dc2626';
+    errorMsg.style.border = '1px solid rgba(248,113,113,0.4)';
+    setTimeout(() => {
+      errorMsg.style.display = 'none';
+    }, 5000);
+  }
+
+  function showSuccessModal() {
+    modal.style.display = 'flex';
+    modal.querySelector('div').style.transform = 'scale(1)';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function hideModal() {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  closeModal.onclick = hideModal;
+  modal.onclick = function(e) {
+    if (e.target === modal) hideModal();
+  };
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && modal.style.display === 'flex') {
+      hideModal();
+    }
+  });
+
+  // Input focus effects
+  [movieTitle, releaseYear, movieNote].forEach(input => {
+    input.onfocus = function() {
+      this.style.borderColor = '#667eea';
+      this.style.boxShadow = '0 0 0 3px rgba(102,126,234,0.2)';
+    };
+    input.onblur = function() {
+      this.style.borderColor = 'rgba(255,255,255,0.3)';
+      this.style.boxShadow = 'none';
+    };
+  });
+
+  // Init
+  updateCooldownUI();
+});
+</script>
+
+</body>
+</html>
