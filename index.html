@@ -6,11 +6,15 @@
     <title>Movie Request Form</title>
 </head>
 <body>
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.2); max-width: 500px; margin: 20px auto; font-family: 'Segoe UI', sans-serif; position: relative; overflow: hidden;">
 
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; padding: 30px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.2); max-width: 500px; margin: 20px auto; font-family: 'Segoe UI', sans-serif;">
+  <!-- Moving Floating Shapes - Continuously Moving Across Screen -->
+  <div style="position: absolute; width: 100px; height: 100px; background: linear-gradient(45deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05)); border-radius: 50%; animation: moveLeftToRight 12s linear infinite, sparkle 2s linear infinite; box-shadow: 0 0 20px rgba(255,255,255,0.3);"></div>
+  <div style="position: absolute; width: 140px; height: 80px; background: linear-gradient(-45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02)); border-radius: 40% 60% 30% 70% / 60% 30% 70% 40%; animation: moveRightToLeft 15s linear infinite reverse, sparkle 3s linear infinite 1s; box-shadow: 0 0 30px rgba(255,255,255,0.2);"></div>
+  <div style="position: absolute; width: 60px; height: 60px; background: radial-gradient(circle, rgba(255,255,255,0.2), transparent); border-radius: 50%; animation: moveDiagonal 10s linear infinite, pulse 1.5s ease-in-out infinite; box-shadow: 0 0 15px rgba(255,255,255,0.4);"></div>
 
-  <h3 style="color: white; font-size: 1.8rem; margin-bottom: 10px;">🎬 Movie Request</h3>
-  <p style="color: rgba(255,255,255,0.9); margin-bottom: 30px;">Apni movie request yahan submit karo</p>
+  <h3 style="color: white; font-size: 1.8rem; font-weight: 700; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); position: relative; z-index: 2;">🎬 Movieroll Movie Request</h3>
+  <p style="color: rgba(255,255,255,0.9); margin-bottom: 30px; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">Apni movie request yahan submit karo</p>
 
   <form id="requestForm">
     <div style="margin-bottom: 20px;">
@@ -53,6 +57,30 @@
     </div>
   </div>
 </div>
+
+<style>
+@keyframes moveLeftToRight {
+  0% { left: -120px; top: 10%; }
+  100% { left: calc(100% + 20px); top: 70%; }
+}
+@keyframes moveRightToLeft {
+  0% { right: -160px; top: 30%; }
+  100% { right: calc(100% + 40px); top: 80%; }
+}
+@keyframes moveDiagonal {
+  0% { left: -80px; top: 80%; }
+  50% { left: 50%; top: 20%; }
+  100% { left: calc(100% + 20px); top: 10%; }
+}
+@keyframes sparkle {
+  0%, 100% { opacity: 0.4; box-shadow: 0 0 20px rgba(255,255,255,0.3); }
+  50% { opacity: 1; box-shadow: 0 0 40px rgba(255,255,255,0.6); }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -133,15 +161,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     setLoading(true);
-
     try {
       const message = `🎬 *New Movie Request*
 
 👤 *User:* ${navigator.userAgent.includes('Mobile') ? '📱 Mobile' : '💻 Desktop'}
+
 📌 *Title:* ${title}
+
 ${releaseYear.value ? `🗓️ *Year:* ${releaseYear.value}` : ''}
+
 ${movieNote.value.trim() ? `
+
 📝 *Notes:* ${movieNote.value.trim()}` : ''}
+
 ⏰ *Time:* ${new Date().toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'})}`;
 
       const url = `https://api.telegram.org/bot${CONFIG.token}/sendMessage?chat_id=${CONFIG.chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
@@ -223,6 +255,5 @@ ${movieNote.value.trim() ? `
   updateCooldownUI();
 });
 </script>
-
 </body>
 </html>
